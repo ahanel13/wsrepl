@@ -93,7 +93,7 @@ options:
   -P PLUGIN, --plugin PLUGIN
                         Plugin file to load
   --plugin-provided-url
-                        Indicates if plugin provided dynamic url for websockets
+                        Indicates if a websocket url is provided by a plugin                      
   -v VERBOSE, --verbose VERBOSE
                         Verbosity level, 1-4 default: 3 (errors, warnings, info), 4 adds debug
 ```
@@ -105,6 +105,8 @@ To automate your websocket communication, you can create a Python plugin by exte
 Here is an outline of how to define a plugin:
 
 ```python
+from wsrepl import Plugin, WSMessage
+
 class MyPlugin(Plugin):
     # Messages that will be sent to the server on (re-)connect.
     messages = ["message1", "message2", "message3"]

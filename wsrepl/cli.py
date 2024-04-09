@@ -33,7 +33,7 @@ parser.add_argument('-p', '--http-proxy',         type=str,                     
 parser.add_argument('-r', '--reconnect-interval', type=int,                      default=2,     help='Reconnect interval (seconds, default: 2)')
 parser.add_argument('-I', '--initial-messages',   type=str,                                     help='Send the messages from this file on connect')
 parser.add_argument('-P', '--plugin',             type=str,                                     help='Plugin file to load')
-parser.add_argument(      '--plugin-provided-url',          action='store_true', default=False, help='Indicates if plugin provided dynamic url for websockets')
+parser.add_argument(      '--plugin-provided-url',          action='store_true', default=False, help='Indicates if a websocket url is provided by a plugin')
 parser.add_argument('-v', '--verbose',            type=int,                      default=3,     help='Verbosity level, 1-4 default: 3 (errors, warnings, info), 4 adds debug')
 
 def cli():
