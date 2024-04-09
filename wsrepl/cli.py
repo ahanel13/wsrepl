@@ -1,5 +1,5 @@
 import argparse
-
+from argparse import Namespace
 from wsrepl import WSRepl
 
 parser = argparse.ArgumentParser(description='Websocket Client')
@@ -37,44 +37,49 @@ parser.add_argument(      '--plugin-provided-url',          action='store_true',
 parser.add_argument('-v', '--verbose',            type=int,                      default=3,     help='Verbosity level, 1-4 default: 3 (errors, warnings, info), 4 adds debug')
 
 def cli():
-    args = parser.parse_args()
-    url = args.url or args.url_positional
-    if url and args.plugin_provided_url is False:
-        # Check and modify the URL protocol if necessary
-        if url.startswith('http://'):
-            url = url.replace('http://', 'ws://', 1)
-        elif url.startswith('https://'):
-            url = url.replace('https://', 'wss://', 1)
-        elif not url.startswith(('ws://', 'wss://')):
-            parser.error('Invalid protocol. Supported protocols are http://, https://, ws://, and wss://.')
-    elif args.plugin_provided_url is False and args.plugin is not None:
-        parser.error('Please provide a WebSocket URL using -u or use --plugin-provided-url if the WebSocket URL provided in a plugin')
-    elif args.plugin_provided_url is False and args.plugin is None:
-        parser.error('Please provide either a WebSocket URL using -u or use --plugin-provided-url with --plugin if the WebSocket URL provided in a plugin')
+  args: Namespace = parser.parse_args()
+  url : str       = args.url or args.url_positional
 
-    app = WSRepl(
-        url=url,
-        small=args.small,
-        user_agent=args.user_agent,
-        origin=args.origin,
-        cookies=args.cookie if isinstance(args.cookie, list) else [args.cookie] if args.cookie else [],
-        headers=args.header if isinstance(args.header, list) else [args.header] if args.header else [],
-        headers_file=args.headers_file,
-        ping_interval=args.ping_interval,
-        hide_ping_pong=args.hide_ping_pong,
-        ping_0x1_interval=args.ping_0x1_interval,
-        ping_0x1_payload=args.ping_0x1_payload,
-        pong_0x1_payload=args.pong_0x1_payload,
-        hide_0x1_ping_pong=args.hide_0x1_ping_pong,
-        reconnect_interval=args.reconnect_interval,
-        proxy=args.http_proxy,
-        verify_tls=not args.insecure,
-        initial_msgs_file=args.initial_messages,
-        plugin_path=args.plugin,
-        plugin_provided_url=args.plugin_provided_url,
-        verbosity=args.verbose,
-    )
-    app.run()
+  if url and args.plugin_provided_url is False:
+    # Check and modify the URL protocol if necessary
+    if url.startswith('http://'):
+      url = url.replace('http://', 'ws://', 1)
+    elif url.startswith('https://'):
+      url = url.replace('https://', 'wss://', 1)
+    elif not url.startswith(('ws://', 'wss://')):
+      parser.error('Invalid protocol. Supported protocols are http://, https://, ws://, and wss://.')
+
+  elif args.plugin_provided_url is False and args.plugin is not None:
+    parser.error('Please provide a WebSocket URL using -u '
+                 'or use --plugin-provided-url if the WebSocket URL provided in a plugin')
+
+  elif args.plugin_provided_url is False and args.plugin is None:
+    parser.error('Please provide either a WebSocket URL using -u '
+                 'or use --plugin-provided-url with --plugin if the WebSocket URL provided in a plugin')
+
+  app: WSRepl = WSRepl(
+    url                = url,
+    small              = args.small,
+    user_agent         = args.user_agent,
+    origin             = args.origin,
+    cookies            = args.cookie if isinstance(args.cookie, list) else [args.cookie] if args.cookie else [],
+    headers            = args.header if isinstance(args.header, list) else [args.header] if args.header else [],
+    headers_file       = args.headers_file,
+    ping_interval      = args.ping_interval,
+    hide_ping_pong     = args.hide_ping_pong,
+    ping_0x1_interval  = args.ping_0x1_interval,
+    ping_0x1_payload   = args.ping_0x1_payload,
+    pong_0x1_payload   = args.pong_0x1_payload,
+    hide_0x1_ping_pong = args.hide_0x1_ping_pong,
+    reconnect_interval = args.reconnect_interval,
+    proxy              = args.http_proxy,
+    verify_tls         = not args.insecure,
+    initial_msgs_file  = args.initial_messages,
+    plugin_path        = args.plugin,
+    plugin_provided_url= args.plugin_provided_url,
+    verbosity          = args.verbose
+  )
+  app.run()
 
 if __name__ == '__main__':
     cli()
