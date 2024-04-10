@@ -144,7 +144,7 @@ class AuthPlugin(Plugin):
         auth_message = {
             "messageType": "auth",
             "auth": {
-                "user": "user-1234"",
+                "user": "user-1234",
                 "password": "password-1234"
             }
         }
@@ -159,7 +159,7 @@ wsrepl -u URL -P auth_plugin.py
 
 Replace URL with your target websocket URL and auth_plugin.py with the path to the Python file containing your plugin.
 
-[docs/](./docs/) directory contains a few more example plugins.
+[docs/](docs) directory contains a few more example plugins.
 
 ## Contributing
 
