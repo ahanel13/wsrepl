@@ -7,6 +7,7 @@ from textual.app import App, ComposeResult
 from textual.logging import TextualHandler
 from textual.widgets import Input
 
+from wsrepl import WSReplConfig
 from wsrepl.log import log, register_log_handler
 from wsrepl.widgets import History, Parent
 from wsrepl.MessageHandler import MessageHandler
@@ -22,49 +23,17 @@ logging.basicConfig(
 class WSRepl(App):
     CSS_PATH = "app.css"
 
-    def __init__(self,
-                 # URL is the only required argument
-                 url: str,
-                 # UI settings
-                 small: bool                        = False,
-                 # Websocket settings
-                 user_agent: str | None             = None,
-                 origin: str | None                 = None,
-                 cookies: list[str] | None          = None,
-                 headers: list[str] | None          = None,
-                 headers_file: str | None           = None,
-                 ping_interval: int | float         = 24, # 0 -> disable auto ping
-                 hide_ping_pong: bool               = False,
-                 ping_0x1_interval: int | float     = 24, # 0 -> disable fake ping
-                 ping_0x1_payload: str | None       = None,
-                 pong_0x1_payload: str | None       = None,
-                 hide_0x1_ping_pong: bool           = False,
-                 reconnect_interval: int            =    0,
-                 proxy: str | None                  = None,
-                 verify_tls: bool                   = True,
-                 # Other
-                 initial_msgs_file: str | None      = None,
-                 plugin_path: str | None            = None,
-                 plugin_provided_url: bool | None   = None,
-                 verbosity: int                     = 3) -> None:
+    def __init__(self, config: WSReplConfig) -> None:
         super().__init__()
 
         # Small UI
-        self.small = small
+        self.small = config.small
 
         # Verbosity for logging level
-        self.verbosity = verbosity
+        self.verbosity = config.verbosity
 
         # Message handler, spawns a thread to handle the websocket connection
-        self.message_handler = MessageHandler(
-            app=self,
-            url=url, user_agent=user_agent, origin=origin, cookies=cookies, headers=headers, headers_file=headers_file,
-            ping_interval=ping_interval, hide_ping_pong=hide_ping_pong,
-            ping_0x1_interval=ping_0x1_interval, ping_0x1_payload=ping_0x1_payload, pong_0x1_payload=pong_0x1_payload,
-            hide_0x1_ping_pong=hide_0x1_ping_pong,
-            reconnect_interval=reconnect_interval, proxy=proxy, verify_tls=verify_tls,
-            initial_msgs_file=initial_msgs_file, plugin_path=plugin_path, plugin_provided_url=plugin_provided_url
-        )
+        self.message_handler = MessageHandler(app=self, conf=config)
 
         # These are set in compose()
         self.history = None

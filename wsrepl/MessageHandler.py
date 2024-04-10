@@ -5,6 +5,7 @@ import ssl
 from collections import OrderedDict
 from urllib.parse import urlparse
 
+from wsrepl import WSReplConfig
 from wsrepl.log import log
 from wsrepl.utils import load_plugin
 from wsrepl.WSMessage import WSMessage, Direction
@@ -16,28 +17,11 @@ from wsrepl.Ping0x1Thread import Ping0x1Thread
 class MessageHandler:
     def __init__(self,
                  app: textual.app.App,
-                 url: str,
-                 user_agent: str | None             = None,
-                 origin: str | None                 = None,
-                 cookies: list[str] | None          = None,
-                 headers: list[str] | None          = None,
-                 headers_file: str | None           = None,
-                 ping_interval: int | float         = 24,
-                 hide_ping_pong: bool               = False,
-                 ping_0x1_interval: int | float     = 24,
-                 ping_0x1_payload: str | None       = None,
-                 pong_0x1_payload: str | None       = None,
-                 hide_0x1_ping_pong: bool           = False,
-                 reconnect_interval: int            = 0,
-                 proxy: str | None                  = None,
-                 verify_tls: bool                   = True,
-                 initial_msgs_file: str | None      = None,
-                 plugin_path: str | None            = None,
-                 plugin_provided_url: bool | None   = None) -> None:
+                 conf: WSReplConfig) -> None:
 
         self.app = app
-        self.plugin = load_plugin(plugin_path)(message_handler=self)
-        if(plugin_provided_url):
+        self.plugin = load_plugin(conf.plugin_path)(message_handler=self)
+        if conf.plugin_provided_url:
             try:
                 url = self.plugin.url
                 print("URL from plugin = " + url)
@@ -45,8 +29,14 @@ class MessageHandler:
                 print("Failed to get URL path from plugin. Exiting...")
                 exit()
 
-        self.initial_messages: list[WSMessage] = self._load_initial_messages(initial_msgs_file)
-        processed_headers: OrderedDict = self._process_headers(headers, headers_file, user_agent, origin, cookies)
+        self.initial_messages: list[WSMessage] = self._load_initial_messages(conf.initial_msgs_file)
+        processed_headers: OrderedDict = self._process_headers(
+            conf.headers,
+            conf.headers_file,
+            conf.user_agent,
+            conf.origin,
+            conf.cookies
+        )
 
         self._ws = WebsocketConnection(
             # Stuff WebsocketConnection needs to call back to us
@@ -57,39 +47,40 @@ class MessageHandler:
         )
 
         # Args passed to websocket.WebSocketApp.run_forever()
+        proxy = conf.proxy
         if isinstance(proxy, str):
             proxy = 'http://' + proxy if '://' not in proxy else proxy
 
         self._ws.connect_args = {
             'suppress_origin': 'Origin' in processed_headers,
-            'sslopt': {'cert_reqs': ssl.CERT_NONE} if not verify_tls else {},
+            'sslopt': {'cert_reqs': ssl.CERT_NONE} if not conf.verify_tls else {},
             'ping_interval': 0, # Disable websocket-client's autoping because it doesn't provide feedback
             'http_proxy_host': urlparse(proxy).hostname if proxy else None,
             'http_proxy_port': urlparse(proxy).port if proxy else None,
             'proxy_type': 'http' if proxy else None,
-            'reconnect': reconnect_interval
+            'reconnect': conf.reconnect_interval
         }
 
         self.is_stopped = threading.Event()
 
         # Regular ping thread, conforming to RFC 6455 (ping uses opcode 0x9, pong uses 0xA, data is arbitrary but must be the same)
-        if ping_interval:
-            self.ping_thread = PingThread(self, ping_interval, self.is_stopped)
+        if conf.ping_interval:
+            self.ping_thread = PingThread(self, conf.ping_interval, self.is_stopped)
         else:
             self.ping_thread = None
 
         # Fake ping thread, using opcode 0x (TEXT) and arbitrary ping / pong messages
-        self.ping_0x1_interval = ping_0x1_payload and pong_0x1_payload and ping_0x1_interval
-        self.ping_0x1_data = ping_0x1_payload or self.plugin.ping_0x1_payload
-        self.pong_0x1_data = pong_0x1_payload or self.plugin.pong_0x1_payload
+        self.ping_0x1_interval = conf.ping_0x1_payload and conf.pong_0x1_payload and conf.ping_0x1_interval
+        self.ping_0x1_data = conf.ping_0x1_payload or self.plugin.ping_0x1_payload
+        self.pong_0x1_data = conf.pong_0x1_payload or self.plugin.pong_0x1_payload
         if self.ping_0x1_interval:
-            self.ping_0x1_thread = Ping0x1Thread(self, ping_0x1_interval, ping_0x1_payload, self.is_stopped)
+            self.ping_0x1_thread = Ping0x1Thread(self, conf.ping_0x1_interval, conf.ping_0x1_payload, self.is_stopped)
         else:
             self.ping_0x1_thread = None
 
         # Whether to show ping / pong messages in the history
-        self.hide_ping_pong = hide_ping_pong
-        self.hide_0x1_ping_pong = hide_0x1_ping_pong
+        self.hide_ping_pong = conf.hide_ping_pong
+        self.hide_0x1_ping_pong = conf.hide_0x1_ping_pong
 
     def _process_headers(self, headers: list[str] | None, headers_file: str | None,
                          user_agent: str | None, origin: str | None, cookies: list[str]) -> OrderedDict:
@@ -200,7 +191,7 @@ class MessageHandler:
 
     async def on_message_received(self, msg: str) -> bool:
         """Called when the websocket receives a text message."""
-        message = WSMessage.incoming(message)
+        message = WSMessage.incoming(msg)
 
         await self.plugin.on_message_received(message)
         await self.plugin.after_message_received(message)

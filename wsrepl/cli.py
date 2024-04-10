@@ -1,6 +1,7 @@
 import argparse
 from argparse import Namespace
 from wsrepl import WSRepl
+from wsrepl.WSReplConfig import WSReplConfig
 
 parser = argparse.ArgumentParser(description='Websocket Client')
 # Pass URL either as -u or as a positional argument
@@ -57,28 +58,30 @@ def cli():
     parser.error('Please provide either a WebSocket URL using -u '
                  'or use --plugin-provided-url with --plugin if the WebSocket URL provided in a plugin')
 
-  app: WSRepl = WSRepl(
-    url                = url,
-    small              = args.small,
-    user_agent         = args.user_agent,
-    origin             = args.origin,
-    cookies            = args.cookie if isinstance(args.cookie, list) else [args.cookie] if args.cookie else [],
-    headers            = args.header if isinstance(args.header, list) else [args.header] if args.header else [],
-    headers_file       = args.headers_file,
-    ping_interval      = args.ping_interval,
-    hide_ping_pong     = args.hide_ping_pong,
-    ping_0x1_interval  = args.ping_0x1_interval,
-    ping_0x1_payload   = args.ping_0x1_payload,
-    pong_0x1_payload   = args.pong_0x1_payload,
-    hide_0x1_ping_pong = args.hide_0x1_ping_pong,
-    reconnect_interval = args.reconnect_interval,
-    proxy              = args.http_proxy,
-    verify_tls         = not args.insecure,
-    initial_msgs_file  = args.initial_messages,
-    plugin_path        = args.plugin,
-    plugin_provided_url= args.plugin_provided_url,
-    verbosity          = args.verbose
+  config = WSReplConfig(
+    url                 = url,
+    small               = args.small,
+    user_agent          = args.user_agent,
+    origin              = args.origin,
+    cookies             = args.cookie if isinstance(args.cookie, list) else [args.cookie] if args.cookie else [],
+    headers             = args.header if isinstance(args.header, list) else [args.header] if args.header else [],
+    headers_file        = args.headers_file,
+    ping_interval       = args.ping_interval,
+    hide_ping_pong      = args.hide_ping_pong,
+    ping_0x1_interval   = args.ping_0x1_interval,
+    ping_0x1_payload    = args.ping_0x1_payload,
+    pong_0x1_payload    = args.pong_0x1_payload,
+    hide_0x1_ping_pong  = args.hide_0x1_ping_pong,
+    reconnect_interval  = args.reconnect_interval,
+    proxy               = args.http_proxy,
+    verify_tls          = not args.insecure,
+    initial_msgs_file   = args.initial_messages,
+    plugin_path         = args.plugin,
+    plugin_provided_url = args.plugin_provided_url,
+    verbosity           = args.verbose
   )
+
+  app: WSRepl = WSRepl(config)
   app.run()
 
 if __name__ == '__main__':
